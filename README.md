@@ -64,3 +64,18 @@ change value of exe_metadata to :
         _ => {}
     }
 ```
+
+### Registry
+Need to find how use generic type in fn
+
+```rust
+    tools::set_reg_str(HKEY_CURRENT_USER,
+        "Software\\rustmydetection",
+        "exe",
+        "\"c:\\git\\rustmydetection.exe\"");
+    
+    tools::set_reg_u32(HKEY_CURRENT_USER,
+        "Software\\rustmydetection",
+        "start",
+        1u32);
+```    
