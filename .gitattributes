@@ -27,3 +27,4 @@
 *.bin binary
 *.exe binary
 *.dll binary
+*.evtx binary
