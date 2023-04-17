@@ -28,3 +28,4 @@
 *.exe binary
 *.dll binary
 *.evtx binary
+*.zip binary
