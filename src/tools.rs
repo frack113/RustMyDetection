@@ -6,19 +6,24 @@ extern crate winreg;
 use winreg::HKEY;
 use winreg::RegKey;
 use winreg::enums::*;
+use winreg::types::ToRegValue;
 
 use std::fs::File;
 use std::io::Write;
 
 /* learn how use generic type for value */
-pub fn set_reg_str(root: HKEY, regpath: &str,name: &str, value: &str){
+pub fn set_reg_str(root: HKEY, regpath: &str,name: &str, value: &str)  -> bool{
     let base = winreg::RegKey::predef(root);
     let rootkey = base.create_subkey(regpath);
     match rootkey{
         Ok(subkey) => {
-            let _set_result = subkey.0.set_value(name, &value);
+            let set_result = subkey.0.set_value(name, &value);
+            match set_result{
+                Err(_) => return false,
+                Ok(_) => return true,
+            }
         },
-        Err(_) => return(),
+        Err(_) => return false,
     }
 }
 
