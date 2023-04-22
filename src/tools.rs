@@ -1,6 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
+use std::os::windows::process::CommandExt;
 
 extern crate winreg;
 use winreg::HKEY;
@@ -76,7 +77,7 @@ pub fn run_exe(executable: &str,commandline: &str, folder: Option<&str>) {
 
     let mut child = Command::new(executable)
                                 .current_dir(my_path)
-                                .args([commandline])
+                                .raw_arg(commandline)
                                 .spawn()
                                 .expect("faild start");
 

