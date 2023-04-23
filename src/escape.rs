@@ -70,13 +70,13 @@ pub fn jump_man(){
     auto_spawn(out_exe);
 }
 
-pub fn ppid_spoof() {
+pub fn ppid_spoof(ppid: u32, executable: String) {
     
     let mut attrsize: SIZE_T = Default::default();
     let mut pi = PROCESS_INFORMATION::default();
     let mut si = STARTUPINFOEXA::default();
     unsafe {
-        let mut openproc: HANDLE = OpenProcess(0x02000000, 0, 19400); //PPID
+        let mut openproc: HANDLE = OpenProcess(0x02000000, 0, ppid); //PPID
 
         InitializeProcThreadAttributeList(null_mut(), 1, 0, &mut attrsize);
         si.lpAttributeList = HeapAlloc(GetProcessHeap(), 0, attrsize) as _;
@@ -91,9 +91,10 @@ pub fn ppid_spoof() {
             null_mut(),
         );
         si.StartupInfo.cb = mem::size_of::<STARTUPINFOEXA>() as u32;
+        let exe: String = format!("{}\0",executable);
         CreateProcessA(
             null_mut(),
-            "notepad.exe\0".as_ptr() as LPSTR,
+            exe.as_ptr() as LPSTR,
             null_mut(),
             null_mut(),
             0,
