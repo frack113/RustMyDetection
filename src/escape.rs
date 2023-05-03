@@ -39,16 +39,10 @@ pub fn auto_spawn(exe_path: &str){
     }
 }
 
-pub fn jump_man(){
+pub fn jump_man(ppid_spoofing:bool){
     let start_exe = std::env::current_exe().unwrap();
     let binding = start_exe.clone();
     let folder_exe = binding.parent().unwrap();
-    let name_exe = start_exe.file_name().unwrap();
-    let name_exe_string = name_exe.to_str().unwrap().to_string();
-
-    if name_exe_string == "All_Star.exe"{
-        return();
-    }
 
     let mut rng = rand::thread_rng();
     let mario_world = vec![
@@ -67,7 +61,11 @@ pub fn jump_man(){
     let new_folder = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
     let binding = folder_exe.join(new_folder).join(enemies);
     let out_exe = binding.to_str().unwrap();
-    auto_spawn(out_exe);
+    if ppid_spoofing{
+
+    }else{
+        auto_spawn(out_exe);
+    }
 }
 
 pub fn ppid_spoof(ppid: u32, executable: String) {

