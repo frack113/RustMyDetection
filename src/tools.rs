@@ -13,7 +13,7 @@ use std::fs::File;
 use std::io::Write;
 
 /* learn how use generic type for value */
-pub fn set_reg_str(root: HKEY, regpath: &str,name: &str, value: &str)  -> bool{
+pub fn set_reg_str(root: HKEY, regpath: &str,name: &str, value: &str)  -> bool {
     let base = winreg::RegKey::predef(root);
     let rootkey = base.create_subkey(regpath);
     match rootkey{
@@ -37,6 +37,32 @@ pub fn set_reg_u32(root: HKEY, regpath: &str,name: &str, value: u32){
         },
         Err(_) => return(),
     }
+}
+
+
+pub fn reg_countdown(regpath:&str,regvalue:&str,count:u32)-> bool{
+    let base = winreg::RegKey::predef(HKEY_CURRENT_USER);
+    let (rootkey, disp) = base.create_subkey(regpath).expect("erreur");
+    match disp{
+        REG_CREATED_NEW_KEY => {
+            rootkey.set_value(regvalue, &count).expect("fail");
+        },
+        REG_OPENED_EXISTING_KEY => {
+            let subkey_value: Result<u32, std::io::Error> = rootkey.get_value(regvalue);
+            match subkey_value{
+                Ok(val_reg) => {
+                    let new_val = val_reg - 1;
+                    rootkey.set_value(regvalue, &new_val).expect("fail");
+                    if new_val == 0 {
+                        rootkey.delete_value(regvalue).expect("fail");
+                        return false
+                    }
+                },
+                Err(_) => rootkey.set_value(regvalue, &count).expect("fail"),
+            }
+        },
+    }
+    return true
 }
 
 /*
